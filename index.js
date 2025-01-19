@@ -31,6 +31,7 @@ async function run() {
 
     const userCollection = client.db("employeeDB").collection("users");
     const sheetCollection = client.db("employeeDB").collection(" sheets");
+    const payCollection = client.db("employeeDB").collection(" pay");
 
 
     app.post('/jwt', async (req, res) => {
@@ -156,6 +157,12 @@ async function run() {
       const result = await sheetCollection.deleteOne(query)
       res.send(result)
 
+    })
+    // pay
+    app.post('/pay', async (req, res) => {
+      const pay = req.body
+      const result = await payCollection.insertOne(pay)
+      res.send(result)
     })
     
 
