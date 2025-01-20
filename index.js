@@ -74,6 +74,75 @@ async function run() {
       const result = await userCollection.find().toArray()
       res.send(result)
     })
+    // update salary
+    app.get('/users/single/:id', async (req, res) => {
+      const id = req.params.id
+      console.log(id)
+      if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+        return res.status(400).json({ error: "Invalid ObjectId format" });
+    }
+      const query = { _id: new ObjectId(id) }
+      const result = await userCollection.findOne(query)
+      res.send(result)
+
+    })
+    app.patch('/users/update/:id', async (req, res) => {
+      const user = req.body
+      const id = req.params.id
+      if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+        return res.status(400).json({ error: "Invalid ObjectId format" });
+    }
+      const filter = { _id: new ObjectId(id)  }
+      const updateDoc = {
+        $set: {
+            salary: user.salary,
+            
+
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+    // make hr
+    app.patch('/users/makeHr/:id', async (req, res) => {
+     const id = req.params.id
+      if (!/^[a-fA-F0-9]{24}$/.test(id)) {
+        return res.status(400).json({ error: "Invalid ObjectId format" });
+    }
+      const filter = { _id: new ObjectId(id)  }
+      const updateDoc = {
+        $set: {
+           
+            role:'hr'
+
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+    // fire
+    app.patch('/users/fire/:id', async (req, res) => {
+     const id = req.params.id
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid ObjectId format" });
+    }
+      const filter = { _id: new ObjectId(id)  }
+      const updateDoc = {
+        $set: {
+           
+           isFired:true
+
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+
+
+
+
     app.get('/users/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       if (email !== req.decoded.email) {
