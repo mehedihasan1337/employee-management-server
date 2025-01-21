@@ -43,7 +43,7 @@ async function run() {
     })
     // middlewares
     const verifyToken = (req, res, next) => {
-      console.log('inside verify token', req.headers.authorization)
+      // console.log('inside verify token', req.headers.authorization)
       if (!req.headers.authorization) {
         return res.status(401).send({ message: 'forbidden access' })
       }
@@ -83,7 +83,7 @@ async function run() {
     // update salary
     app.get('/users/single/:id', async (req, res) => {
       const id = req.params.id
-      console.log(id)
+      // console.log(id)
       if (!/^[a-fA-F0-9]{24}$/.test(id)) {
         return res.status(400).json({ error: "Invalid ObjectId format" });
     }
@@ -210,6 +210,9 @@ async function run() {
       const result = await sheetCollection.updateOne(filter, updateDoc)
       res.send(result)
     })
+
+
+
     app.get('/sheets/:email', async (req, res) => {
       const email = req.params.email;
       // const decodedEmail=req.user?.email
@@ -234,7 +237,11 @@ async function run() {
       const result = await payCollection.insertOne(pay)
       res.send(result)
     })
-    
+    app.get('/pay',  async (req, res) => {
+      console.log(req.headers)
+      const result = await payCollection.find().toArray()
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
