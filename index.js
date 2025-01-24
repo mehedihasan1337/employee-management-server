@@ -280,8 +280,36 @@ async function run() {
       const result = await paymentCollection.find(query).toArray()
       res.send(result)
     })
-  
 
+    // slug diteles
+    app.get('/employees/:slug', async (req, res) => {
+      const { slug } = req.params;
+      try {
+       
+        const payments = await paymentCollection.find({ email: slug }).toArray();
+    
+        if (payments.length >0){
+          const allPayments= payments.map((payment)=>({
+            name: payment.name,
+            email: payment.email,
+            designation: payment.designation,
+            date: payment.date,
+            photoURL: payment.photoURL,
+            salary: payment.salary,
+            month: payment.month,
+            year: payment.year, 
+          }))
+         
+          return res.json(allPayments)
+        
+        } else {
+          return res.status(404).send('Employee not found');
+        }
+      } catch (err) {
+        console.error('Error fetching employee data:', err);
+        return res.status(500).send('Internal Server Error');
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
