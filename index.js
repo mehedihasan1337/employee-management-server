@@ -3,6 +3,7 @@ const cors = require('cors');
 const app = express()
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
+const stripe =require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000
 
 //  middleware
@@ -32,6 +33,7 @@ async function run() {
     const userCollection = client.db("employeeDB").collection("users");
     const sheetCollection = client.db("employeeDB").collection(" sheets");
     const payCollection = client.db("employeeDB").collection(" pay");
+    const paymentCollection = client.db("employeeDB").collection(" payments");
 
 
     app.post('/jwt', async (req, res) => {
@@ -81,7 +83,7 @@ async function run() {
 
 
     // update salary
-    app.get('/users/single/:id', async (req, res) => {
+    app.get('/users/single/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       // console.log(id)
       if (!/^[a-fA-F0-9]{24}$/.test(id)) {
@@ -92,7 +94,7 @@ async function run() {
       res.send(result)
 
     })
-    app.patch('/users/update/:id', async (req, res) => {
+    app.patch('/users/update/:id',verifyToken, async (req, res) => {
       const user = req.body
       const id = req.params.id
       if (!/^[a-fA-F0-9]{24}$/.test(id)) {
@@ -110,7 +112,7 @@ async function run() {
       res.send(result)
     })
     // make hr
-    app.patch('/users/makeHr/:id', async (req, res) => {
+    app.patch('/users/makeHr/:id',verifyToken, async (req, res) => {
      const id = req.params.id
       if (!/^[a-fA-F0-9]{24}$/.test(id)) {
         return res.status(400).json({ error: "Invalid ObjectId format" });
@@ -128,7 +130,7 @@ async function run() {
     })
 
     // fire
-    app.patch('/users/fire/:id', async (req, res) => {
+    app.patch('/users/fire/:id',verifyToken, async (req, res) => {
      const id = req.params.id
       if (!ObjectId.isValid(id)) {
         return res.status(400).json({ error: "Invalid ObjectId format" });
@@ -180,7 +182,7 @@ async function run() {
       const result = await sheetCollection.find().toArray()
       res.send(result)
     })
-    app.get('/sheets/single/:id', async (req, res) => {
+    app.get('/sheets/single/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       console.log(id)
       if (!/^[a-fA-F0-9]{24}$/.test(id)) {
@@ -191,7 +193,7 @@ async function run() {
       res.send(result)
 
     })
-    app.patch('/sheets/update/:id', async (req, res) => {
+    app.patch('/sheets/update/:id',verifyToken, async (req, res) => {
       const sheet = req.body
       const id = req.params.id
       if (!/^[a-fA-F0-9]{24}$/.test(id)) {
@@ -213,7 +215,7 @@ async function run() {
 
 
 
-    app.get('/sheets/:email', async (req, res) => {
+    app.get('/sheets/:email',verifyToken, async (req, res) => {
       const email = req.params.email;
       // const decodedEmail=req.user?.email
 
@@ -224,7 +226,7 @@ async function run() {
       res.send(result);
     })
 
-    app.delete('/sheets/:id', async (req, res) => {
+    app.delete('/sheets/:id',verifyToken, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await sheetCollection.deleteOne(query)
@@ -242,6 +244,44 @@ async function run() {
       const result = await payCollection.find().toArray()
       res.send(result)
     })
+
+    // payment 
+    app.post('/create-payment-intent', async (req, res) => {
+      try {
+        const { amount } = req.body;
+        console.log("Received amount:", amount);
+    
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount * 100,
+          currency: 'usd',
+        });
+    
+        res.send({ clientSecret: paymentIntent.client_secret });
+      }
+       catch (error) {
+        console.error("Error creating payment intent:", error);
+        res.status(400).send({ error: error.message });
+      }
+    });
+
+    app.post('/payments', async (req, res) => {
+      const payment = req.body
+      const paymentResult = await paymentCollection.insertOne(payment)
+      console.log('payment info', payment)
+    
+      res.send({ paymentResult})
+
+    })
+    app.get('/payments/:email',verifyToken, async (req, res) => {
+      const query = { email: req.params.email }
+      if (req.params.email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+      const result = await paymentCollection.find(query).toArray()
+      res.send(result)
+    })
+  
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
